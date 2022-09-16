@@ -2,14 +2,17 @@ using Godot;
 using System;
 
 [Tool]
-public class Interpolation2D : Node2D
+public class Interpolation2D : Node
 {
     [Export]
-    private NodePath InputNodePath = new NodePath("..");
+    private NodePath InputNodePath;
     [Export]
-    public bool Interpolate = true;
+    private NodePath OutputNodePath;
+    [Export]
+    private bool Interpolate = true;
 
     private Node2D InputNode;
+    private Node2D OutputNode;
     
     private float InterpolationTimer;
     private Transform2D OldTransform;
@@ -19,21 +22,33 @@ public class Interpolation2D : Node2D
         SetProcess(false);
         SetPhysicsProcess(false);
 
-        if(InputNodePath != null)
+        if(InputNodePath != null && OutputNodePath != null)
         {
-            InputNode = GetNode<Node2D>(InputNodePath);
+            if(!Engine.EditorHint)
+            {
+                InputNode = GetNode<Node2D>(InputNodePath);
+                OutputNode = GetNode<Node2D>(OutputNodePath);
 
-            this.SetAsToplevel(true);
-            this.Transform = InputNode.Transform;
+                if (InputNode.IsAParentOf(OutputNode))
+                {
+                    OutputNode.SetAsToplevel(true);
+                    OutputNode.Transform = InputNode.Transform;
+                }
+                else if(OutputNode.IsAParentOf(InputNode))
+                {
+                    InputNode.SetAsToplevel(true);
+                    InputNode.Transform = OutputNode.Transform;
+                }
 
-            ProcessPriority = InputNode.ProcessPriority - 1;
-            Engine.PhysicsJitterFix = 0;
-            InputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
-            this.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
-            OldTransform = InputNode.Transform;
+                ProcessPriority = InputNode.ProcessPriority - 1;
+                Engine.PhysicsJitterFix = 0;
+                InputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
+                OutputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
+                OldTransform = InputNode.Transform;
 
-            SetProcess(true);
-            SetPhysicsProcess(true);
+                SetProcess(true);
+                SetPhysicsProcess(true);
+            }
         }
         else
         {
@@ -52,8 +67,8 @@ public class Interpolation2D : Node2D
     {
         InterpolationTimer += delta;
         if(Interpolate)
-            this.Transform = OldTransform.InterpolateWith(InputNode.Transform, InterpolationTimer * Engine.IterationsPerSecond);
+            OutputNode.Transform = OldTransform.InterpolateWith(InputNode.Transform, InterpolationTimer * Engine.IterationsPerSecond);
         else
-            this.Transform = InputNode.Transform;
+            OutputNode.Transform = InputNode.Transform;
     }
 }
