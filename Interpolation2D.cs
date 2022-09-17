@@ -2,93 +2,85 @@ using Godot;
 using System;
 
 [Tool]
-public class Interpolation2D : Node
+public class Interpolation2D : Node2D
 {
-    [Export]
-    public NodePath InputNodePath;
-    [Export]
-    public NodePath OutputNodePath;
-    
-    [Signal]
-    delegate void InterpolateToggled();
     [Export]
     public bool Interpolate
     {
-        get
-        {
-            return _interpolate;
-        }
+        get => _interpolate;
         set
         {
             _interpolate = value;
-            EmitSignal("InterpolateToggled");
+            if(_interpolate)
+                EnableInterpolation();
+            else
+                DisableInterpolation();
         }
     }
     private bool _interpolate = true;
 
-    private Node2D _inputNode;
-    private Node2D _outputNode;
-    
+    private Node2D _nodeToInterpolate;
     private float _interpolationTimer;
     private Transform2D _oldTransform;
 
     public override void _Ready()
     {
-        SetProcess(false);
-        SetPhysicsProcess(false);
-
-        if(InputNodePath != null && OutputNodePath != null)
+        if(!Engine.EditorHint)
         {
-            if(!Engine.EditorHint)
-            {
-                _inputNode = GetNode<Node2D>(InputNodePath);
-                _outputNode = GetNode<Node2D>(OutputNodePath);
-
-                if (_inputNode.IsAParentOf(_outputNode))
-                {
-                    _outputNode.SetAsToplevel(true);
-                    _outputNode.Transform = _inputNode.Transform;
-                }
-                else if(_outputNode.IsAParentOf(_inputNode))
-                {
-                    _inputNode.SetAsToplevel(true);
-                    _inputNode.Transform = _outputNode.Transform;
-                }
-
-                _oldTransform = _inputNode.Transform;
-                ProcessPriority = _inputNode.ProcessPriority - 1;
-
-                Engine.PhysicsJitterFix = 0;
-                _inputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
-                _outputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
-
-                SetProcess(true);
-                SetPhysicsProcess(true);
-            }
+            _nodeToInterpolate = GetParent<Node2D>();
+            ProcessPriority = _nodeToInterpolate.ProcessPriority - 1;
+            
+            Engine.PhysicsJitterFix = 0;
+            _nodeToInterpolate.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
+            this.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
+            
+            if(_interpolate)
+                EnableInterpolation();
+            else
+                DisableInterpolation();
         }
-        else
-        {
-            GD.PrintErr("No Input or Output selected for Interpolation2D!");
-        }
+    }
+
+    private void EnableInterpolation()
+    {
+        this.SetAsToplevel(true);
+        this.Transform = _nodeToInterpolate.Transform;
+        _interpolationTimer = 0;
+        _oldTransform = _nodeToInterpolate.Transform;
+        this.Transform = _nodeToInterpolate.Transform;
+
+        this.SetProcess(true);
+        this.SetPhysicsProcess(true);
+    }
+
+    private void DisableInterpolation()
+    {
+        this.SetAsToplevel(false);
+        this.Transform = Transform2D.Identity;
+        _interpolationTimer = 0;
+        _oldTransform = _nodeToInterpolate.Transform;
+        this.Transform = _nodeToInterpolate.Transform;
+
+        this.SetProcess(false);
+        this.SetPhysicsProcess(false);
+    }
+
+    public void SkipInterpolation()
+    {
+        _interpolationTimer = 0;
+        _oldTransform = _nodeToInterpolate.Transform;
+        this.Transform = _nodeToInterpolate.Transform;
     }
 
     public override void _PhysicsProcess(float delta)
     {
         _interpolationTimer = 0;
-        if(_interpolate)
-            _oldTransform = _inputNode.Transform;
+        _oldTransform = _nodeToInterpolate.Transform;
     }
 
     public override void _Process(float delta)
     {
-        if(_interpolate)
-        {
-            _interpolationTimer += delta;
-            _outputNode.Transform = _oldTransform.InterpolateWith(_inputNode.Transform, _interpolationTimer * Engine.IterationsPerSecond);
-        }
-        else
-        {
-            _outputNode.Transform = _inputNode.Transform;
-        }
+        _interpolationTimer += delta;
+        this.Transform = _oldTransform.InterpolateWith(_nodeToInterpolate.Transform, _interpolationTimer * Engine.IterationsPerSecond);
     }
 }
