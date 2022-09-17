@@ -15,7 +15,6 @@ Nodes added and their properties in the editor:
   - Output Node Path : `NodePath`
   - Interpolate : `bool`
 - `Interpolation2D` : `Node2D`  
-  - Input Node Path : `NodePath`
   - Interpolate : `bool`
 
 ## Usage
@@ -30,4 +29,4 @@ The Interpolate boolean toggles the interpolation for whatever reason (usually
 for teleporting the object without graphical glitches).  
 `Interpolation2D` is similar but since it extends `Node2D`, it has its own `Transform`  
 so it has to be placed as a child of the Node that actually moves while  
-the visible part should be placed as a child of the `Interpolation2D`.
+the visible part to interpolate should be placed as a child of the `Interpolation2D`.
