@@ -4,13 +4,27 @@ using System;
 [Tool]
 public class NestedInterpolation2D : Node2D
 {
+    [Signal]
+    delegate void InterpolateToggled();
     [Export]
-    private bool Interpolate = true;
+    public bool Interpolate
+    {
+        get
+        {
+            return _interpolate;
+        }
+        set
+        {
+            _interpolate = value;
+            EmitSignal("InterpolateToggled");
+        }
+    }
+    private bool _interpolate = true;
 
-    private Node2D InputNode;
+    private Node2D _inputNode;
     
-    private float InterpolationTimer;
-    private Transform2D OldTransform;
+    private float _interpolationTimer;
+    private Transform2D _oldTransform;
 
     public override void _Ready()
     {
@@ -19,16 +33,16 @@ public class NestedInterpolation2D : Node2D
         
         if(!Engine.EditorHint)
         {
-            InputNode = GetParent<Node2D>();
+            _inputNode = GetParent<Node2D>();
 
             this.SetAsToplevel(true);
-            this.Transform = InputNode.Transform;
+            this.Transform = _inputNode.Transform;
 
-            ProcessPriority = InputNode.ProcessPriority - 1;
+            ProcessPriority = _inputNode.ProcessPriority - 1;
             Engine.PhysicsJitterFix = 0;
-            InputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
+            _inputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
             this.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
-            OldTransform = InputNode.Transform;
+            _oldTransform = _inputNode.Transform;
 
             SetProcess(true);
             SetPhysicsProcess(true);
@@ -37,17 +51,21 @@ public class NestedInterpolation2D : Node2D
 
     public override void _PhysicsProcess(float delta)
     {
-        InterpolationTimer = 0;
-        if(Interpolate)
-            OldTransform = InputNode.Transform;
+        _interpolationTimer = 0;
+        if(_interpolate)
+            _oldTransform = _inputNode.Transform;
     }
 
     public override void _Process(float delta)
     {
-        InterpolationTimer += delta;
-        if(Interpolate)
-            this.Transform = OldTransform.InterpolateWith(InputNode.Transform, InterpolationTimer * Engine.IterationsPerSecond);
+        if(_interpolate)
+        {
+            _interpolationTimer += delta;
+            this.Transform = _oldTransform.InterpolateWith(_inputNode.Transform, _interpolationTimer * Engine.IterationsPerSecond);
+        }
         else
-            this.Transform = InputNode.Transform;
+        {
+            this.Transform = _inputNode.Transform;
+        }
     }
 }

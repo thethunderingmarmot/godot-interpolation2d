@@ -5,17 +5,32 @@ using System;
 public class Interpolation2D : Node
 {
     [Export]
-    private NodePath InputNodePath;
+    public NodePath InputNodePath;
     [Export]
-    private NodePath OutputNodePath;
-    [Export]
-    private bool Interpolate = true;
-
-    private Node2D InputNode;
-    private Node2D OutputNode;
+    public NodePath OutputNodePath;
     
-    private float InterpolationTimer;
-    private Transform2D OldTransform;
+    [Signal]
+    delegate void InterpolateToggled();
+    [Export]
+    public bool Interpolate
+    {
+        get
+        {
+            return _interpolate;
+        }
+        set
+        {
+            _interpolate = value;
+            EmitSignal("InterpolateToggled");
+        }
+    }
+    private bool _interpolate = true;
+
+    private Node2D _inputNode;
+    private Node2D _outputNode;
+    
+    private float _interpolationTimer;
+    private Transform2D _oldTransform;
 
     public override void _Ready()
     {
@@ -26,25 +41,25 @@ public class Interpolation2D : Node
         {
             if(!Engine.EditorHint)
             {
-                InputNode = GetNode<Node2D>(InputNodePath);
-                OutputNode = GetNode<Node2D>(OutputNodePath);
+                _inputNode = GetNode<Node2D>(InputNodePath);
+                _outputNode = GetNode<Node2D>(OutputNodePath);
 
-                if (InputNode.IsAParentOf(OutputNode))
+                if (_inputNode.IsAParentOf(_outputNode))
                 {
-                    OutputNode.SetAsToplevel(true);
-                    OutputNode.Transform = InputNode.Transform;
+                    _outputNode.SetAsToplevel(true);
+                    _outputNode.Transform = _inputNode.Transform;
                 }
-                else if(OutputNode.IsAParentOf(InputNode))
+                else if(_outputNode.IsAParentOf(_inputNode))
                 {
-                    InputNode.SetAsToplevel(true);
-                    InputNode.Transform = OutputNode.Transform;
+                    _inputNode.SetAsToplevel(true);
+                    _inputNode.Transform = _outputNode.Transform;
                 }
 
-                ProcessPriority = InputNode.ProcessPriority - 1;
+                ProcessPriority = _inputNode.ProcessPriority - 1;
                 Engine.PhysicsJitterFix = 0;
-                InputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
-                OutputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
-                OldTransform = InputNode.Transform;
+                _inputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
+                _outputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
+                _oldTransform = _inputNode.Transform;
 
                 SetProcess(true);
                 SetPhysicsProcess(true);
@@ -58,17 +73,21 @@ public class Interpolation2D : Node
 
     public override void _PhysicsProcess(float delta)
     {
-        InterpolationTimer = 0;
-        if(Interpolate)
-            OldTransform = InputNode.Transform;
+        _interpolationTimer = 0;
+        if(_interpolate)
+            _oldTransform = _inputNode.Transform;
     }
 
     public override void _Process(float delta)
     {
-        InterpolationTimer += delta;
-        if(Interpolate)
-            OutputNode.Transform = OldTransform.InterpolateWith(InputNode.Transform, InterpolationTimer * Engine.IterationsPerSecond);
+        if(_interpolate)
+        {
+            _interpolationTimer += delta;
+            _outputNode.Transform = _oldTransform.InterpolateWith(_inputNode.Transform, _interpolationTimer * Engine.IterationsPerSecond);
+        }
         else
-            OutputNode.Transform = InputNode.Transform;
+        {
+            _outputNode.Transform = _inputNode.Transform;
+        }
     }
 }
