@@ -9,24 +9,15 @@ So I started making this addon in C# with the excuse of learning more about inte
 You can find [a full explaination here](https://docs.godotengine.org/en/3.6/tutorials/physics/interpolation/physics_interpolation_introduction.html) (thanks Godot!). 
 
 ## Diagram
-Nodes added and their properties in the editor:
-- `Interpolation2D` : `Node`  
-  - Input Node Path : `NodePath`
-  - Output Node Path : `NodePath`
-  - Interpolate : `bool`
-- `NestedInterpolation2D` : `Node2D`  
-  - Interpolate : `bool`
+- `Interpolation2D` : `Node2D`  
+  - `Interpolate` : `bool` (toggles interpolation)
+  - `SkipInterpolation()` : `void` (skips interpolation)
 
 ## Usage
-`Interpolation2D` doesn't have a `Transform` and has no `Position`,  
-it's just something that does the work for you while you leave it somewhere.  
-In the editor you can modify its properties once you add it to the Tree,  
-you should set Input Node Path to the Node that actually moves (usually  
-the one with the the movement logic within `_PhysicalProcess`, like a `KinematicBody2D`).  
-You should set Output Node Path to the Node that you want to move smoothly  
-(usually the one which contains the visible part, like a `Sprite`).  
-The Interpolate boolean toggles the interpolation for whatever reason (usually  
-for teleporting the object without graphical glitches).  
-`NestedInterpolation2D` is similar but since it extends `Node2D`, it has its own `Transform`  
-so it has to be placed as a child of the Node that actually moves while  
-the visible part to interpolate should be placed as a child of the `NestedInterpolation2D`.
+`Interpolation2D` works if placed as a child of the Node that actually moves (usually  
+the one with the movement logic within `_PhysicalProcess`, like a `KinematicBody2D`),  
+and if the Node that you want to move smoothly (usually the one which contains the  
+visible part, like a `Sprite`) is placed as a child of `Interpolation2D`.  
+The `Interpolate` boolean toggles the interpolation for whatever reason you need,  
+while the `SkipInterpoltion()` method will skip the current interpolation operation  
+(if you need to instantly move, first change the `Transform` and then call this method).  
