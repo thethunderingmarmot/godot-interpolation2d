@@ -55,11 +55,12 @@ public class Interpolation2D : Node
                     _inputNode.Transform = _outputNode.Transform;
                 }
 
+                _oldTransform = _inputNode.Transform;
                 ProcessPriority = _inputNode.ProcessPriority - 1;
+
                 Engine.PhysicsJitterFix = 0;
                 _inputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
                 _outputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
-                _oldTransform = _inputNode.Transform;
 
                 SetProcess(true);
                 SetPhysicsProcess(true);

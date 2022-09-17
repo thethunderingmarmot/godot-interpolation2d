@@ -38,12 +38,13 @@ public class NestedInterpolation2D : Node2D
             this.SetAsToplevel(true);
             this.Transform = _inputNode.Transform;
 
+            _oldTransform = _inputNode.Transform;
             ProcessPriority = _inputNode.ProcessPriority - 1;
+
             Engine.PhysicsJitterFix = 0;
             _inputNode.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
             this.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
-            _oldTransform = _inputNode.Transform;
-
+            
             SetProcess(true);
             SetPhysicsProcess(true);
         }
