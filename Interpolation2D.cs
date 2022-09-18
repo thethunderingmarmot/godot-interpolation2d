@@ -25,6 +25,9 @@ public class Interpolation2D : Node2D
 
     public override void _Ready()
     {
+        this.SetProcess(false);
+        this.SetPhysicsProcess(false);
+
         if(!Engine.EditorHint)
         {
             _nodeToInterpolate = GetParent<Node2D>();
